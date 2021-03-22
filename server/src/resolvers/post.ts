@@ -34,7 +34,11 @@ export class PostResolver {
     @Mutation(() => Post, {nullable: true})
     async updatePost(
         @Arg('id') id: number,
-        @Arg('title') title: string,
+        @Arg(
+            'title',
+            () => String,
+            {nullable: true}
+            ) title: string,
         @Ctx() {em}: MyContext
     ): Promise<Post | null> {
         const post = await em.findOne(Post, {id});
@@ -46,5 +50,18 @@ export class PostResolver {
             await em.persistAndFlush(post);
         }
         return post;
+    }
+
+    @Mutation(() => Boolean)
+    async deletePost(
+        @Arg("id") id: number,
+        @Ctx() {em}: MyContext
+    ): Promise<boolean> {
+        try {
+            await em.nativeDelete(Post, {id});
+        } catch (e) {
+            return false
+        }
+        return true;
     }
 }
