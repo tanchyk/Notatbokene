@@ -1,7 +1,12 @@
+import React from "react";
+import {Navbar} from "../components/Navbar";
 
-const Index = () => {
+const Index: React.FC = () => {
     return (
-        <div>hello</div>
+        <>
+            <Navbar />
+            <div>hellp</div>
+        </>
     )
 }
 
