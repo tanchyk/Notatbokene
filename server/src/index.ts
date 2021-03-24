@@ -14,7 +14,7 @@ import connectRedis from 'connect-redis';
 import {HelloResolver} from "./resolvers/hello";
 import {PostResolver} from "./resolvers/post";
 import {UserResolver} from "./resolvers/user";
-import {__prod__, COOKIE_NAME} from "./constants";
+import {__prod__, CLIENT, COOKIE_NAME} from "./constants";
 import {MyContext} from "./types";
 
 const app = async () => {
@@ -28,7 +28,7 @@ const app = async () => {
 
     app.use(
         cors({
-            origin: "http://localhost:3000",
+            origin: CLIENT,
             credentials: true
         })
     );
@@ -57,7 +57,7 @@ const app = async () => {
             resolvers: [HelloResolver, PostResolver, UserResolver],
             validate: false
         }),
-        context: ({req, res}: MyContext): MyContext => ({em: orm.em, req, res})
+        context: ({req, res}: MyContext): MyContext => ({em: orm.em, req, res, redis})
     });
 
     apolloServer.applyMiddleware({
