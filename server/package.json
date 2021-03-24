@@ -40,10 +40,6 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
-    "@mikro-orm/cli": "^4.5.0",
-    "@mikro-orm/core": "^4.5.0",
-    "@mikro-orm/migrations": "^4.5.0",
-    "@mikro-orm/postgresql": "^4.5.0",
     "apollo-server-express": "^2.21.2",
     "argon2": "^0.27.1",
     "babel-plugin-transform-typescript-metadata": "^0.3.2",
@@ -58,6 +54,7 @@
     "pg": "^8.5.1",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "^1.1.1",
+    "typeorm": "^0.2.31",
     "uuid": "^8.3.2"
   },
   "mikro-orm": {

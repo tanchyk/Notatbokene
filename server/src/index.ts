@@ -1,7 +1,5 @@
 import "reflect-metadata";
-require('dotenv').config();
-import {MikroORM} from "@mikro-orm/core";
-import microConfig from './mikro-orm.config';
+import {createConnection} from "typeorm";
 import express from 'express';
 import {ApolloServer} from 'apollo-server-express';
 import {buildSchema} from 'type-graphql';
@@ -14,12 +12,23 @@ import connectRedis from 'connect-redis';
 import {HelloResolver} from "./resolvers/hello";
 import {PostResolver} from "./resolvers/post";
 import {UserResolver} from "./resolvers/user";
-import {__prod__, CLIENT, COOKIE_NAME} from "./constants";
+import {CLIENT, COOKIE_NAME} from "./constants";
 import {MyContext} from "./types";
+import {Post} from "./entities/Post";
+import {User} from "./entities/User";
+
+require('dotenv').config();
 
 const app = async () => {
-    const orm = await MikroORM.init(microConfig);
-    await orm.getMigrator().up();
+    await createConnection({
+        type: 'postgres',
+        database: 'Notatbokene',
+        username: `${process.env.POSTGRES_USER}`,
+        password: `${process.env.POSTGRES_PASSWORD}`,
+        logging: true,
+        synchronize: true,
+        entities: [Post, User]
+    });
 
     const app = express();
 
@@ -57,7 +66,7 @@ const app = async () => {
             resolvers: [HelloResolver, PostResolver, UserResolver],
             validate: false
         }),
-        context: ({req, res}: MyContext): MyContext => ({em: orm.em, req, res, redis})
+        context: ({req, res}: MyContext): MyContext => ({ req, res, redis})
     });
 
     apolloServer.applyMiddleware({
