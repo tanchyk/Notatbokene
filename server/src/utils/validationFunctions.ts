@@ -16,7 +16,7 @@ export const validateRegister = (input: UserInput) => {
             field: "password",
             message: "Password should be greater than 3"
         }]
-    } else if (input.email.includes('@')) {
+    } else if (!input.email.includes('@')) {
         return [{
             field: "email",
             message: "Invalid Email"
