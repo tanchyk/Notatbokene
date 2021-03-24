@@ -26,3 +26,11 @@ export class UserResponse {
     @Field(() => User, {nullable: true})
     user?: User;
 }
+
+@InputType()
+export class PostInput {
+    @Field()
+    title: string;
+    @Field()
+    text: string;
+}

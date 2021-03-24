@@ -1,6 +1,9 @@
-import {Arg, Mutation, Query, Resolver} from "type-graphql";
+import {Arg, Ctx, Mutation, Query, Resolver, UseMiddleware} from "type-graphql";
 import {Post} from "../entities/Post";
 import {getRepository} from "typeorm";
+import {PostInput} from "./InputTypes";
+import {MyContext} from "../types";
+import {isAuth} from "../middleware/isAuth";
 
 @Resolver()
 export class PostResolver {
@@ -19,11 +22,16 @@ export class PostResolver {
     }
 
     @Mutation(() => Post)
+    @UseMiddleware(isAuth)
     async createPost(
-        @Arg('title') title: string
+        @Arg('input') input: PostInput,
+        @Ctx() {req}: MyContext
     ): Promise<Post> {
+
         const post = new Post();
-        post.title = title;
+        post.creatorId = req.session.userId;
+        post.title = input.title;
+        post.text = input.text;
 
         const postRepository = getRepository(Post);
         await postRepository.save(post);
