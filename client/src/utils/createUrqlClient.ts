@@ -2,6 +2,7 @@ import {dedupExchange, fetchExchange} from "urql";
 import {cacheExchange} from "@urql/exchange-graphcache";
 import {LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation} from "../generated/graphql";
 import {betterUpdateQuery} from "./betterUpdateQuery";
+import {cursorPagination} from "./cursorPagination";
 
 export const createUrqlClient = (ssrExchange: any) => ({
     url: 'http://localhost:4000/graphql',
@@ -9,6 +10,14 @@ export const createUrqlClient = (ssrExchange: any) => ({
         credentials: 'include' as const
     },
     exchanges: [dedupExchange, cacheExchange({
+        keys: {
+            PaginatedPosts: () => null
+        },
+        resolvers: {
+          Query: {
+              posts: cursorPagination()
+          }
+        },
         updates: {
             Mutation: {
                 logout: (_result, _ , cache) => {
