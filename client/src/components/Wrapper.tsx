@@ -7,7 +7,7 @@ export interface WrapperProps {
 
 export const Wrapper: React.FC<WrapperProps> = ({children, variant="regular"}) => {
     return (
-        <Box mx="auto" w={variant === 'regular' ? "80%" : "60%"}>
+        <Box mx="auto" w={variant === 'regular' ? "70%" : "40%"}>
             {children}
         </Box>
     );

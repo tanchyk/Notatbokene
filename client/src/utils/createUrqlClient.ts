@@ -11,11 +11,21 @@ import {
 import {betterUpdateQuery} from "./betterUpdateQuery";
 import {cursorPagination} from "./cursorPagination";
 import { gql } from '@urql/core';
+import {isServer} from "./isServer";
 
-export const createUrqlClient = (ssrExchange: any) => ({
+export const createUrqlClient = (ssrExchange: any, ctx: any) => {
+    let cookie = '';
+    if(isServer()) {
+        cookie = ctx.req.headers.cookie;
+    }
+
+    return {
     url: 'http://localhost:4000/graphql',
     fetchOptions: {
-        credentials: 'include' as const
+        credentials: 'include' as const,
+        headers: cookie ? {
+            cookie
+        } : undefined
     },
     exchanges: [dedupExchange, cacheExchange({
         keys: {
@@ -108,4 +118,4 @@ export const createUrqlClient = (ssrExchange: any) => ({
             }
         }
     }), ssrExchange, fetchExchange]
-})
+}}

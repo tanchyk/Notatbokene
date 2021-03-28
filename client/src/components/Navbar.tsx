@@ -1,17 +1,15 @@
-import { Button, Flex, Heading } from "@chakra-ui/react";
+import { Button, Flex, Heading, Text , Stack} from "@chakra-ui/react";
 import React from "react";
 import NextLink from "next/link";
 import {useLogoutMutation, useMeQuery} from "../generated/graphql";
-import {isServer} from "../utils/isServer";
+import {Wrapper} from "./Wrapper";
 
 interface NavbarProps {
 
 }
 
 export const Navbar: React.FC<NavbarProps> = ({}) => {
-    const [{data, fetching}] = useMeQuery({
-        pause: isServer()
-    });
+    const [{data, fetching}] = useMeQuery();
     const [{fetching: logoutFetching}, logout] = useLogoutMutation()
     let body = null;
 
@@ -44,10 +42,20 @@ export const Navbar: React.FC<NavbarProps> = ({}) => {
     }
 
     return (
-        <Flex bg="gray.300" p={4}>
-            <Flex ml="auto" alignItems="center">
-                {body}
-            </Flex>
+        <Flex zIndex={1} position="sticky" top={0} bg="gray.300" p={4}>
+            <Wrapper variant='regular'>
+                <Flex>
+                    <NextLink href="/">
+                        <Stack spacing={-1} _hover={{cursor: "pointer"}}>
+                            <Heading>Notatboken</Heading>
+                            <Text>community</Text>
+                        </Stack>
+                    </NextLink>
+                    <Flex ml="auto" alignItems="center">
+                        {body}
+                    </Flex>
+                </Flex>
+            </Wrapper>
         </Flex>
     );
 }

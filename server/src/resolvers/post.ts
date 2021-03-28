@@ -94,12 +94,18 @@ export class PostResolver {
         @Ctx() {req}: MyContext
     ): Promise<PaginatedPosts> {
         const finalLimit = Math.min(50, limit);
-        const replacements: any[] = [finalLimit + 1, req.session.userId];
+        const replacements: any[] = [finalLimit + 1];
 
-        if(cursor) {
-            replacements.push(new Date(cursor));
+        if(req.session.userId) {
+            replacements.push(req.session.userId);
         }
 
+        let cursorIndex = 3
+        if(cursor) {
+            replacements.push(new Date(cursor));
+            cursorIndex = replacements.length;
+        }
+        console.log(replacements)
         const posts = await getConnection().query(`
             select p.*,
             json_build_object(
@@ -116,7 +122,7 @@ export class PostResolver {
             }
             from post p
             inner join public.user u on u.id = p."creatorId"
-            ${cursor ? `where p."createdAt" < $3` : ""}
+            ${cursor ? `where p."createdAt" < $${cursorIndex}` : ""}
             order by p."createdAt" DESC
             limit $1
         `, replacements);
@@ -129,10 +135,10 @@ export class PostResolver {
 
     @Query(() => Post, {nullable: true})
     post(
-        @Arg('id') id: number
+        @Arg('id', () => Int) id: number
     ): Promise<Post | undefined> {
         const postRepository = getRepository(Post);
-        return postRepository.findOne({ where: {id}});
+        return postRepository.findOne({relations: ['creator'], where: {id}});
     }
 
     @Mutation(() => Post)

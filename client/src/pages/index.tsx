@@ -40,7 +40,11 @@ const Index: React.FC = () => {
                                 <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
                                     <UpvoteSection post={post} />
                                     <Box>
-                                        <Heading fontSize="xl">{post.title}</Heading>
+                                        <NextLink href='/post/[id]' as={`/post/${post.id}`}>
+                                            <Link>
+                                                <Heading fontSize="xl">{post.title}</Heading>
+                                            </Link>
+                                        </NextLink>
                                         <Text mt={2}>Posted by {post.creator.username}</Text>
                                         <Text mt={4}>{post.textSnippet}</Text>
                                     </Box>
