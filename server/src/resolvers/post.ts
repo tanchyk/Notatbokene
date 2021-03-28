@@ -17,6 +17,7 @@ import {PostInput} from "./InputTypes";
 import {MyContext} from "../types";
 import {isAuth} from "../middleware/isAuth";
 import {Upvote} from "../entities/Upvote";
+import {User} from "../entities/User";
 
 @ObjectType()
 class PaginatedPosts {
@@ -28,6 +29,28 @@ class PaginatedPosts {
 
 @Resolver(Post)
 export class PostResolver {
+    @FieldResolver(() => User)
+    creator(
+        @Root() post: Post,
+        @Ctx() {userLoader}: MyContext
+    ) {
+        return userLoader.load(post.creatorId);
+    }
+
+    @FieldResolver(() => Int, {nullable: true})
+    async voteStatus (
+        @Root() post: Post,
+        @Ctx() {upvoteLoader, req}: MyContext
+    ) {
+        if(!req.session.userId) {
+            return  null;
+        }
+
+        const upvote = await upvoteLoader.load({postId: post.id, userId: req.session.userId});
+
+        return upvote ? upvote.value : null;
+    }
+
     @FieldResolver(() => String)
     textSnippet(
         @Root() root: Post
@@ -110,20 +133,12 @@ export class PostResolver {
         console.log(replacements)
         const posts = await getConnection().query(`
             select p.*,
-            json_build_object(
-                'id', u.id,
-                'username', u.username,
-                'email', u.email,
-                'createdAt', u."createdAt",
-                'updatedAt', u."updatedAt"
-            ) creator,
             ${
             req.session.userId
                 ? '(select value from upvote where "userId" = $2 and "postId" = p.id) "voteStatus"'
                 : 'null as "voteStatus"'
             }
             from post p
-            inner join public.user u on u.id = p."creatorId"
             ${cursor ? `where p."createdAt" < $${cursorIndex}` : ""}
             order by p."createdAt" DESC
             limit $1
@@ -140,7 +155,7 @@ export class PostResolver {
         @Arg('id', () => Int) id: number
     ): Promise<Post | undefined> {
         const postRepository = getRepository(Post);
-        return postRepository.findOne({relations: ['creator'], where: {id}});
+        return postRepository.findOne({where: {id}});
     }
 
     @Mutation(() => Post)

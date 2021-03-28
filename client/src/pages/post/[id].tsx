@@ -2,8 +2,9 @@ import React from "react";
 import {withUrqlClient} from "next-urql";
 import {createUrqlClient} from "../../utils/createUrqlClient";
 import {Layout} from "../../components/Layout";
-import {Heading, Stack, Text} from '@chakra-ui/react';
+import {Flex, Heading, Stack, Text} from '@chakra-ui/react';
 import {useGetPost} from "../../utils/useGetPost";
+import {PostButtons} from "../../components/PostButtons";
 
 const Post: React.FC<{}> = ({}) => {
     const [{data, fetching}] = useGetPost();
@@ -26,10 +27,13 @@ const Post: React.FC<{}> = ({}) => {
 
     return (
         <Layout>
-            <Stack spacing={4}>
-                <Heading>{data.post.title}</Heading>
-                <Text>{data.post.text}</Text>
-            </Stack>
+            <Flex my={8}>
+                <Stack spacing={4}>
+                    <Heading>{data.post.title}</Heading>
+                    <Text>{data.post.text}</Text>
+                </Stack>
+                <PostButtons postId={data.post.id} creatorId={data.post.creator.id} />
+            </Flex>
         </Layout>
     );
 }

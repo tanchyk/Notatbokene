@@ -20,6 +20,7 @@ import {User} from "./entities/User";
 require('dotenv').config();
 import path from "path";
 import {Upvote} from "./entities/Upvote";
+import {createUpvoteLoader, createUserLoader} from "./utils/createUserLoader";
 
 const app = async () => {
     await createConnection({
@@ -71,7 +72,13 @@ const app = async () => {
             resolvers: [HelloResolver, PostResolver, UserResolver],
             validate: false
         }),
-        context: ({req, res}: MyContext): MyContext => ({ req, res, redis})
+        context: ({req, res}: MyContext): MyContext => ({
+            req,
+            res,
+            redis,
+            userLoader: createUserLoader(),
+            upvoteLoader: createUpvoteLoader()
+        })
     });
 
     apolloServer.applyMiddleware({
