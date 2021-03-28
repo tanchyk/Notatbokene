@@ -12,10 +12,11 @@ import {
     UseMiddleware
 } from "type-graphql";
 import {Post} from "../entities/Post";
-import {getRepository} from "typeorm";
+import {getConnection, getRepository} from "typeorm";
 import {PostInput} from "./InputTypes";
 import {MyContext} from "../types";
 import {isAuth} from "../middleware/isAuth";
+import {Upvote} from "../entities/Upvote";
 
 @ObjectType()
 class PaginatedPosts {
@@ -38,6 +39,50 @@ export class PostResolver {
         return trimmedString + ' ...';
     }
 
+    @Mutation(() => Boolean)
+    @UseMiddleware(isAuth)
+    async vote(
+        @Arg('postId', () => Int) postId: number,
+        @Arg('value', () => Int) value: number,
+        @Ctx() {req}: MyContext
+    ) {
+        const realValue = value !== -1 ? 1 : -1;
+        const {userId} = req.session;
+
+        const upvote = await Upvote.findOne({where: {postId, userId}});
+
+        if(upvote && upvote.value !== realValue) {
+            await getConnection().transaction(async tm => {
+                await tm.query(`
+                    update upvote
+                    set value = ${realValue}
+                    where "postId" = ${postId} and "userId" = ${userId}
+                `);
+
+                await tm.query(`
+                    update post
+                    set points = points + ${2 * realValue}
+                    where id = ${postId};
+                `);
+            });
+        } else if(!upvote) {
+            await getConnection().transaction(async tm => {
+                await tm.query(`
+                    insert into upvote ("userId", "postId", value)
+                    values (${userId}, ${postId}, ${realValue});
+                `);
+
+                await tm.query(`
+                    update post
+                    set points = points + ${realValue}
+                    where id = ${postId};
+                `);
+            });
+        }
+
+        return true;
+    }
+
     @Query(() => PaginatedPosts)
     async posts(
         @Arg('limit', () => Int) limit: number,
@@ -45,17 +90,36 @@ export class PostResolver {
             'cursor',
             () => Date,
             {nullable: true}
-            ) cursor: Date | null
+            ) cursor: Date | null,
+        @Ctx() {req}: MyContext
     ): Promise<PaginatedPosts> {
         const finalLimit = Math.min(50, limit);
-        const query = getRepository(Post).createQueryBuilder("post")
-            .orderBy('post.createdAt', "DESC")
-            .take(finalLimit + 1)
+        const replacements: any[] = [finalLimit + 1, req.session.userId];
+
         if(cursor) {
-            query.where('post.createdAt < :cursor', {cursor})
+            replacements.push(new Date(cursor));
         }
 
-        const posts = await query.getMany()
+        const posts = await getConnection().query(`
+            select p.*,
+            json_build_object(
+                'id', u.id,
+                'username', u.username,
+                'email', u.email,
+                'createdAt', u."createdAt",
+                'updatedAt', u."updatedAt"
+            ) creator,
+            ${
+            req.session.userId
+                ? '(select value from upvote where "userId" = $2 and "postId" = p.id) "voteStatus"'
+                : 'null as "voteStatus"'
+            }
+            from post p
+            inner join public.user u on u.id = p."creatorId"
+            ${cursor ? `where p."createdAt" < $3` : ""}
+            order by p."createdAt" DESC
+            limit $1
+        `, replacements);
 
         return {
             hasMore: posts.length === limit + 1,

@@ -5,6 +5,7 @@ import {usePostsQuery} from "../generated/graphql";
 import {Box, Button, Flex, Heading, Link, Skeleton, Stack, Text} from "@chakra-ui/react";
 import {Layout} from "../components/Layout";
 import NextLink from "next/link";
+import {UpvoteSection} from "../components/UpvoteSection";
 
 const Index: React.FC = () => {
     const [variables, setVariables] = useState({limit: 10, cursor: null as string | null});
@@ -36,10 +37,14 @@ const Index: React.FC = () => {
                     <Stack spacing={8} my={8}>
                         {
                             data.posts.posts.map((post) => (
-                                <Box key={post.id} p={5} shadow="md" borderWidth="1px">
-                                    <Heading fontSize="xl">{post.title}</Heading>
-                                    <Text mt={4}>{post.textSnippet}</Text>
-                                </Box>
+                                <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+                                    <UpvoteSection post={post} />
+                                    <Box>
+                                        <Heading fontSize="xl">{post.title}</Heading>
+                                        <Text mt={2}>Posted by {post.creator.username}</Text>
+                                        <Text mt={4}>{post.textSnippet}</Text>
+                                    </Box>
+                                </Flex>
                             ))
                         }
                     </Stack>

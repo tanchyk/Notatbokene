@@ -1,8 +1,16 @@
 import {dedupExchange, fetchExchange} from "urql";
 import {cacheExchange} from "@urql/exchange-graphcache";
-import {LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation} from "../generated/graphql";
+import {
+    LoginMutation,
+    LogoutMutation,
+    MeDocument,
+    MeQuery,
+    RegisterMutation,
+    VoteMutationVariables
+} from "../generated/graphql";
 import {betterUpdateQuery} from "./betterUpdateQuery";
 import {cursorPagination} from "./cursorPagination";
+import { gql } from '@urql/core';
 
 export const createUrqlClient = (ssrExchange: any) => ({
     url: 'http://localhost:4000/graphql',
@@ -20,6 +28,42 @@ export const createUrqlClient = (ssrExchange: any) => ({
         },
         updates: {
             Mutation: {
+                vote: (_result, args , cache) => {
+                    const {postId, value} = args as VoteMutationVariables;
+                    const data = cache.readFragment(
+                        gql(`
+                            fragment _ on Post {
+                                id
+                                points
+                                voteStatus
+                            }
+                        `), {id: postId}
+                    )
+                    if(data) {
+                        if(data.voteStatus === value) {
+                            return;
+                        }
+                        const newPoints = data.points + (!data.voteStatus ? 1 : 2) * value;
+                        cache.writeFragment(
+                            gql(`
+                            fragment __ on Post {
+                                points
+                                voteStatus
+                            }
+                        `),
+                            {id: postId, points: newPoints, voteStatus: value}
+                        )
+                    }
+                },
+                createPost: (_result, _ , cache) => {
+                    const allFields = cache.inspectFields("Query");
+                    const fieldInfos = allFields.filter(
+                        (info) => info.fieldName === "posts"
+                    );
+                    fieldInfos.forEach((fi) => {
+                        cache.invalidate('Query', 'posts', fi.arguments || {});
+                    });
+                },
                 logout: (_result, _ , cache) => {
                     betterUpdateQuery<LogoutMutation, MeQuery>(
                         cache,

@@ -19,6 +19,7 @@ import {User} from "./entities/User";
 
 require('dotenv').config();
 import path from "path";
+import {Upvote} from "./entities/Upvote";
 
 const app = async () => {
     await createConnection({
@@ -28,7 +29,7 @@ const app = async () => {
         password: `${process.env.POSTGRES_PASSWORD}`,
         logging: true,
         synchronize: true,
-        entities: [Post, User],
+        entities: [Post, User, Upvote],
         migrations: [path.join(__dirname, './migrations/*')]
     });
 
