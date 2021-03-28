@@ -32,11 +32,13 @@ export class PostResolver {
     textSnippet(
         @Root() root: Post
     ) {
-        let trimmedString = root.text.substr(0, 75);
-        if(root.text.length > trimmedString.length){
+        if(root.text.length > 75) {
+            let trimmedString = root.text.substr(0, 75);
             trimmedString = trimmedString.substr(0, Math.min(trimmedString.length, trimmedString.lastIndexOf(" ")))
+            return trimmedString + ' ...';
+        } else {
+            return root.text;
         }
-        return trimmedString + ' ...';
     }
 
     @Mutation(() => Boolean)
@@ -160,23 +162,20 @@ export class PostResolver {
     }
 
     @Mutation(() => Post, {nullable: true})
+    @UseMiddleware(isAuth)
     async updatePost(
-        @Arg('id') id: number,
-        @Arg(
-            'title',
-            () => String,
-            {nullable: true}
-            ) title: string
+        @Arg('id', () => Int) id: number,
+        @Arg('title') title: string,
+        @Arg('text') text: string
     ): Promise<Post | undefined> {
         const postRepository = getRepository(Post);
         const post = await postRepository.findOne({ where: {id}});
         if(!post) {
             return undefined;
         }
-        if(typeof title !== "undefined") {
             post.title = title;
+            post.text = text;
             await postRepository.save(post);
-        }
         return post;
     }
 
