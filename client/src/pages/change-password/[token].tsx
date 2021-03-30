@@ -5,11 +5,10 @@ import {toErrorMap} from "../../utils/toErrorMap";
 import {InputField} from "../../components/InputField";
 import {Alert, AlertIcon, Button, Link, Stack} from "@chakra-ui/react";
 import {Wrapper} from "../../components/Wrapper";
-import {useChangePasswordMutation} from "../../generated/graphql";
+import {MeDocument, MeQuery, useChangePasswordMutation} from "../../generated/graphql";
 import {useRouter} from "next/router";
-import {createUrqlClient} from "../../utils/createUrqlClient";
-import {NextComponentType, withUrqlClient} from "next-urql";
 import NextLink from "next/link";
+import {withApollo} from "../../utils/withApollo"
 
 interface ChangePasswordProps {
     token: string;
@@ -17,7 +16,7 @@ interface ChangePasswordProps {
 
 const ChangePassword: NextPage<ChangePasswordProps> = ({token}) => {
     const router = useRouter();
-    const [, changePassword] = useChangePasswordMutation();
+    const [changePassword] = useChangePasswordMutation();
     const [tokenError, setTokenError] = useState<string>('');
 
     return (
@@ -27,7 +26,21 @@ const ChangePassword: NextPage<ChangePasswordProps> = ({token}) => {
                     newPassword: ""
                 }}
                 onSubmit={async (values, {setErrors}) => {
-                    const response = await changePassword({token, newPassword: values.newPassword});
+                    const response = await changePassword({
+                        variables: {token, newPassword: values.newPassword},
+                        update: (
+                            cache,
+                            {data}
+                        ) => {
+                            cache.writeQuery<MeQuery>({
+                                query: MeDocument,
+                                data: {
+                                    __typename: 'Query',
+                                    me: data?.changePassword.user
+                                },
+                            })
+                        }
+                    });
 
                     if(response.data?.changePassword?.errors) {
                         const errors = toErrorMap(response.data.changePassword.errors);
@@ -84,4 +97,4 @@ ChangePassword.getInitialProps = ({query}) => {
 }
 
 // @ts-ignore
-export default withUrqlClient(createUrqlClient)(ChangePassword as NextComponentType);
+export default withApollo({ssr: false})(ChangePassword);

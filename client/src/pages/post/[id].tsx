@@ -1,15 +1,14 @@
 import React from "react";
-import {withUrqlClient} from "next-urql";
-import {createUrqlClient} from "../../utils/createUrqlClient";
 import {Layout} from "../../components/Layout";
 import {Flex, Heading, Stack, Text} from '@chakra-ui/react';
 import {useGetPost} from "../../utils/useGetPost";
 import {PostButtons} from "../../components/PostButtons";
+import {withApollo} from "../../utils/withApollo";
 
 const Post: React.FC<{}> = ({}) => {
-    const [{data, fetching}] = useGetPost();
+    const {data, loading} = useGetPost();
 
-    if(fetching) {
+    if(loading) {
         return (
             <Layout>
                 <Heading>...loading</Heading>
@@ -38,4 +37,4 @@ const Post: React.FC<{}> = ({}) => {
     );
 }
 
-export default withUrqlClient(createUrqlClient, {ssr: true})(Post);
+export default withApollo({ssr: true})(Post);

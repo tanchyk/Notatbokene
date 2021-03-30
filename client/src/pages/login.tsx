@@ -3,20 +3,15 @@ import {Formik, Form} from 'formik';
 import {Button, Flex, Link} from "@chakra-ui/react";
 import {Wrapper} from "../components/Wrapper";
 import {InputField} from "../components/InputField";
-import {useLoginMutation} from "../generated/graphql";
+import {MeDocument, MeQuery, useLoginMutation} from "../generated/graphql";
 import {toErrorMap} from "../utils/toErrorMap";
 import {useRouter} from "next/router";
-import {withUrqlClient} from "next-urql";
-import {createUrqlClient} from "../utils/createUrqlClient";
 import NextLink from 'next/link';
+import {withApollo} from "../utils/withApollo";
 
-interface LoginProps {
-
-}
-
-const Login: React.FC<LoginProps> = ({}) => {
+const Login: React.FC = ({}) => {
     const router = useRouter();
-    const [{},login] = useLoginMutation();
+    const [login] = useLoginMutation();
 
     return (
         <Wrapper variant="small">
@@ -26,8 +21,23 @@ const Login: React.FC<LoginProps> = ({}) => {
                     password: ""
                 }}
                 onSubmit={async (values, {setErrors}) => {
-                    const response = await login(values);
-                    console.log(response)
+                    const response = await login({
+                        variables: values,
+                        update: (
+                            cache,
+                            {data}
+                        ) => {
+                            cache.writeQuery<MeQuery>({
+                                query: MeDocument,
+                                data: {
+                                    __typename: 'Query',
+                                    me: data?.login.user
+                                },
+                            });
+                            cache.evict({fieldName: "posts"})
+                        }
+                    });
+
                     if(response.data?.login?.errors) {
                         return setErrors(toErrorMap(response.data.login.errors));
                     } else if(response.data?.login.user) {
@@ -68,4 +78,4 @@ const Login: React.FC<LoginProps> = ({}) => {
     );
 }
 
-export default withUrqlClient(createUrqlClient)(Login);
+export default withApollo({ssr: false})(Login);

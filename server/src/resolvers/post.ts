@@ -130,7 +130,7 @@ export class PostResolver {
             replacements.push(new Date(cursor));
             cursorIndex = replacements.length;
         }
-        console.log(replacements)
+
         const posts = await getConnection().query(`
             select p.*,
             ${

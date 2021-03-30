@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import {createConnection} from "typeorm";
+import {createConnection, getConnectionOptions} from "typeorm";
 import express from 'express';
 import {ApolloServer} from 'apollo-server-express';
 import {buildSchema} from 'type-graphql';
@@ -12,26 +12,18 @@ import connectRedis from 'connect-redis';
 import {HelloResolver} from "./resolvers/hello";
 import {PostResolver} from "./resolvers/post";
 import {UserResolver} from "./resolvers/user";
-import {CLIENT, COOKIE_NAME} from "./constants";
+import {__prod__, CLIENT, COOKIE_NAME} from "./constants";
 import {MyContext} from "./types";
-import {Post} from "./entities/Post";
-import {User} from "./entities/User";
-
-require('dotenv').config();
-import path from "path";
-import {Upvote} from "./entities/Upvote";
 import {createUpvoteLoader, createUserLoader} from "./utils/createUserLoader";
 
+require('dotenv').config();
+
 const app = async () => {
+    const connectionOptions = await getConnectionOptions();
     await createConnection({
-        type: 'postgres',
-        database: 'Notatbokene',
-        username: `${process.env.POSTGRES_USER}`,
-        password: `${process.env.POSTGRES_PASSWORD}`,
-        logging: true,
-        synchronize: true,
-        entities: [Post, User, Upvote],
-        migrations: [path.join(__dirname, './migrations/*')]
+        ...connectionOptions,
+        logging: !__prod__,
+        synchronize: !__prod__
     });
 
     // await conn.runMigrations()
@@ -86,7 +78,7 @@ const app = async () => {
         cors: false
     });
 
-    app.listen(4000, () => {
+    app.listen(parseInt(`${process.env.PORT}`), () => {
         console.log("Done! http://localhost:4000/graphql");
     });
 }

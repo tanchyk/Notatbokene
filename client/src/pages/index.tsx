@@ -1,27 +1,31 @@
-import React, {useState} from "react";
-import {withUrqlClient} from "next-urql";
-import {createUrqlClient} from "../utils/createUrqlClient";
+import React from "react";
 import {usePostsQuery} from "../generated/graphql";
 import {Box, Button, Flex, Heading, Link, Skeleton, Stack, Text} from "@chakra-ui/react";
 import {Layout} from "../components/Layout";
 import NextLink from "next/link";
 import {UpvoteSection} from "../components/UpvoteSection";
 import {PostButtons} from "../components/PostButtons";
+import {withApollo} from "../utils/withApollo";
 
 const Index: React.FC = () => {
-    const [variables, setVariables] = useState({limit: 10, cursor: null as string | null});
-    const [{data, fetching}] = usePostsQuery({
-        variables: variables
+    const {data, loading, fetchMore, variables} = usePostsQuery({
+        variables: {
+            limit: 10,
+            cursor: null
+        },
+        notifyOnNetworkStatusChange: true
     });
 
     const loadMore = () => {
-        setVariables({
-            limit: variables.limit,
-            cursor: data?.posts.posts[data?.posts.posts.length - 1].createdAt
-        })
+        return fetchMore({
+            variables: {
+                limit: variables?.limit,
+                cursor: data?.posts.posts[data?.posts.posts.length - 1].createdAt
+            }
+        });
     }
 
-    if (!fetching && !data) {
+    if (!loading && !data) {
         return <Heading>404</Heading>
     }
 
@@ -34,7 +38,7 @@ const Index: React.FC = () => {
                 </NextLink>
             </Flex>
             {
-                data && !fetching ? (
+                data && !loading ? (
                     <Stack spacing={8} my={8}>
                         {
                             data.posts.posts.map((post) => !post ? null : (
@@ -66,7 +70,7 @@ const Index: React.FC = () => {
             }
             {
                 data && data.posts.hasMore ? (
-                    <Button isLoading={fetching} my={8} onClick={loadMore}>
+                    <Button isLoading={loading} my={8} onClick={loadMore}>
                         Load More
                     </Button>
                 ) : (
@@ -77,4 +81,4 @@ const Index: React.FC = () => {
     )
 }
 
-export default withUrqlClient(createUrqlClient, {ssr: true})(Index)
+export default withApollo({ssr: true})(Index);

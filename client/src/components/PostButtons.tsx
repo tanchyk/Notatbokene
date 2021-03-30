@@ -10,8 +10,8 @@ interface PostButtonsProps {
 }
 
 export const PostButtons: React.FC<PostButtonsProps> = ({postId, creatorId}) => {
-    const [, deletePost] = useDeletePostMutation();
-    const [{data}] = useMeQuery();
+    const [deletePost] = useDeletePostMutation();
+    const {data} = useMeQuery();
 
     if(!data?.me || data.me.id !== creatorId) {
         return null;
@@ -25,7 +25,10 @@ export const PostButtons: React.FC<PostButtonsProps> = ({postId, creatorId}) => 
                 icon={<DeleteIcon/>}
                 onClick={() => {
                     deletePost({
-                        id: postId
+                        variables: {id: postId},
+                        update: (cache) => {
+                            cache.evict({id: 'Post:' + postId});
+                        }
                     })
                 }}
             />
